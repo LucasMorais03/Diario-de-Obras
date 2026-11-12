@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório · {{ obra.nome }} · {{ ini|data }} a {{ fim|data }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></head>
+<body class="impressao">
+<div class="nao-imprimir barra-impressao">
+  <form method="get" class="filtros">
+    <label>De <input type="date" name="inicio" value="{{ ini }}"></label><label>Até <input type="date" name="fim" value="{{ fim }}"></label>
+    <button class="botao sec" type="submit">Atualizar</button>
+    <button class="botao" data-imprimir type="button">Imprimir / salvar em PDF</button>
+    <a href="{{ url_for('obras.painel', obra_id=obra.id) }}">Voltar ao painel</a></form></div>
+<h1>Relatório gerencial da obra</h1>
+<p><strong>{{ obra.nome }}</strong> · {{ obra.endereco or 'Endereço não informado' }}<br>
+Período: {{ ini|data }} a {{ fim|data }} · Gerado em {{ gerado_em|dt }} por {{ usuario.nome }}</p>
+
+<h2>Resumo</h2>
+<table><tbody>
+  <tr><th>Registros no período</th><td>{{ r.n_rdos }}</td><th>Dias úteis sem registro</th><td>{{ r.sem_registro|length }}</td></tr>
+  <tr><th>Atingimento médio da meta</th><td>{{ (r.ating_medio|dec(0) ~ '%') if r.ating_medio is not none else '—' }} (meta {{ meta }}%)</td><th>Horas improdutivas (clima)</th><td>{{ r.horas_total|dec(1) }} h</td></tr>
+  <tr><th>Efetivo médio por dia</th><td>{{ r.efetivo_medio|dec(1) }}</td><th>Ocorrências abertas</th><td>{{ r.abertas|length }}</td></tr>
+  <tr><th>Registros com localização</th><td>{{ (r.pct_loc|dec(0) ~ '%') if r.pct_loc is not none else '—' }}</td><th>Registros completos</th><td>{{ (r.pct_completos|dec(0) ~ '%') if r.pct_completos is not none else '—' }}</td></tr>
+</tbody></table>
+
+<h2>Atingimento da meta diária</h2>{{ graf }}
+
+{% if r.alertas %}<h2>Alertas de desvio</h2><ul>
+  {% for data, rid, tipo, texto in r.alertas %}<li><strong>{{ tipo }}</strong> · {{ data|data }} · {{ texto }}</li>{% endfor %}</ul>{% endif %}
+
+<h2>Registros do período</h2>
+<table><thead><tr><th>Data</th><th>Autor</th><th>Clima</th><th>Efetivo</th><th>Atingim.</th><th>H. improd.</th><th>Ocorr.</th><th>Fotos</th><th>Local</th></tr></thead><tbody>
+  {% for x in r.linhas %}<tr><td>{{ x.data_ref|data }}</td><td>{{ x.autor_nome }}</td><td>{{ R.clima[x.clima_manha] }} / {{ R.clima[x.clima_tarde] }}</td>
+    <td>{{ x.efetivo }}</td><td>{{ (x.ating|dec(0) ~ '%') if x.ating is not none else '—' }}</td><td>{{ x.horas_improdutivas|dec(1) }}</td>
+    <td>{{ x.n_ocorr }}</td><td>{{ x.n_fotos }}</td><td>{{ 'Sim' if x.loc_status=='ok' else 'Não' }}</td></tr>
+  {% else %}<tr><td colspan="9">Sem registros no período.</td></tr>{% endfor %}</tbody></table>
+
+{% if r.ocorrencias %}<h2>Ocorrências do período</h2>
+<table><thead><tr><th>Data</th><th>Tipo</th><th>Gravidade</th><th>Descrição</th><th>Status</th></tr></thead><tbody>
+  {% for o in r.ocorrencias %}<tr><td>{{ o.data_ref|data }}</td><td>{{ R.tipo[o.tipo] }}</td><td>{{ R.grav[o.gravidade] }}</td><td>{{ o.descricao }}</td><td>{{ R.status_oc[o.status_atual] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+
+{% if r.sem_registro %}<h2>Dias úteis sem registro</h2><p>{% for d in r.sem_registro %}{{ d|data }}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body></html>

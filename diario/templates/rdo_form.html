@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, csrf with context %}
+{% block titulo %}Novo registro · {{ obra.nome }}{% endblock %}
+
+{% macro linha_serv(d='', l='', a='') %}
+<div class="linha" data-linha>
+  <label>Serviço executado <input name="serv_desc" maxlength="300" value="{{ d }}" placeholder="Ex.: Alvenaria de vedação"></label>
+  <label>Local / frente <input name="serv_local" maxlength="150" value="{{ l }}" placeholder="Ex.: Pavimento 2"></label>
+  <label>Meta do dia atingida (%) <input name="serv_ating" type="number" min="0" max="100" step="1" inputmode="numeric" value="{{ a }}"></label>
+  <button type="button" class="link remover" data-remover>Remover</button>
+</div>
+{% endmacro %}
+{% macro linha_eq(n='', h='', s='operando') %}
+<div class="linha" data-linha>
+  <label>Equipamento <input name="eq_nome" maxlength="150" value="{{ n }}"></label>
+  <label>Horas <input name="eq_horas" type="number" min="0" max="24" step="0.5" inputmode="decimal" value="{{ h }}"></label>
+  <label>Situação <select name="eq_sit">{% for k, v in R.equip.items() %}<option value="{{ k }}" {% if s==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <button type="button" class="link remover" data-remover>Remover</button>
+</div>
+{% endmacro %}
+{% macro linha_oc(t='atraso', g='baixa', d='') %}
+<div class="linha" data-linha>
+  <label>Tipo <select name="oc_tipo">{% for k, v in R.tipo.items() %}<option value="{{ k }}" {% if t==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Gravidade <select name="oc_grav">{% for k, v in R.grav.items() %}<option value="{{ k }}" {% if g==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label class="largo">Descrição <textarea name="oc_desc" rows="2" maxlength="2000">{{ d }}</textarea></label>
+  <button type="button" class="link remover" data-remover>Remover</button>
+</div>
+{% endmacro %}
+{% macro linha_foto() %}
+<div class="linha" data-linha>
+  <label>Foto <input type="file" name="foto" accept="image/jpeg,image/png,image/webp"></label>
+  <label>Legenda <input name="foto_legenda" maxlength="200"></label>
+  <button type="button" class="link remover" data-remover>Remover</button>
+</div>
+{% endmacro %}
+
+{% block conteudo %}
+{{ obra_nav(obra, 'rdos') }}
+<h2>Novo registro diário</h2>
+{% if erros %}
+<div class="alerta alerta-erro" role="alert"><strong>Não foi possível salvar:</strong>
+  <ul>{% for e in erros %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% if request.files.getlist('foto')|selectattr('filename')|list %}<p>As fotos precisam ser selecionadas novamente.</p>{% endif %}</div>
+{% endif %}
+<div id="aviso-rascunho" class="alerta alerta-ok" hidden>
+  Há um rascunho salvo neste aparelho. <button type="button" class="link" id="rascunho-restaurar">Restaurar</button> ·
+  <button type="button" class="link" id="rascunho-descartar">Descartar</button></div>
+
+<form method="post" enctype="multipart/form-data" id="form-rdo" data-obra="{{ obra.id }}">
+  {{ csrf() }}
+  <input type="hidden" name="form_token" value="{{ token }}">
+  <input type="hidden" name="lat" id="lat" value="">
+  <input type="hidden" name="lon" id="lon" value="">
+  <input type="hidden" name="precisao" id="precisao" value="">
+  <input type="hidden" name="loc_status" id="loc_status" value="nao_informada">
+
+  <fieldset class="cartao"><legend>Identificação</legend>
+    <p class="muted">Autor: <strong>{{ usuario.nome }}</strong>. A data e a hora do envio, o autor e a localização são gravados automaticamente pelo servidor.</p>
+    <div class="linha-campos">
+      <label>Data do registro <input type="date" name="data_ref" required min="{{ obra.data_inicio }}" max="{{ hoje }}" value="{{ form.get('data_ref') if form else hoje }}"></label>
+      <div class="loc" id="loc-box">
+        <strong>Localização:</strong> <span id="loc-texto" class="badge">Obtendo…</span>
+        <button type="button" class="link" id="loc-retry">Tentar novamente</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="cartao"><legend>Clima e condições</legend>
+    <div class="linha-campos">
+      <label>Manhã <select name="clima_manha" required>{% for k, v in R.clima.items() %}<option value="{{ k }}" {% if form and form.get('clima_manha')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <label>Tarde <select name="clima_tarde" required>{% for k, v in R.clima.items() %}<option value="{{ k }}" {% if form and form.get('clima_tarde')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <label>Condição de trabalho <select name="condicao" required>{% for k, v in R.condicao.items() %}<option value="{{ k }}" {% if form and form.get('condicao')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+      <label>Horas improdutivas (clima) <input type="number" name="horas_improdutivas" min="0" max="24" step="0.5" inputmode="decimal" value="{{ form.get('horas_improdutivas','0') if form else '0' }}"></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="cartao"><legend>Efetivo</legend>
+    {% if funcs %}
+    <p class="muted">Marque os funcionários presentes.</p>
+    <div class="checks">
+      {% set marcados = form.getlist('presentes') if form else [] %}
+      {% for f in funcs %}<label class="check"><input type="checkbox" name="presentes" value="{{ f.id }}" {% if f.id|string in marcados %}checked{% endif %}> {{ f.nome }} <span class="muted">({{ f.funcao }}{% if f.equipe %} · {{ f.equipe }}{% endif %})</span></label>{% endfor %}
+    </div>
+    {% else %}<p class="muted">Nenhum funcionário cadastrado nesta obra; informe o efetivo no campo abaixo.</p>{% endif %}
+    <label>Efetivo adicional (terceiros / não cadastrados) <input type="number" name="efetivo_extra" min="0" max="500" inputmode="numeric" value="{{ form.get('efetivo_extra','0') if form else '0' }}"></label>
+  </fieldset>
+
+  <fieldset class="cartao" data-grupo="serv"><legend>Serviços executados</legend>
+    <div class="linhas" data-destino>
+      {% set sd = form.getlist('serv_desc') if form else [] %}{% set sl = form.getlist('serv_local') if form else [] %}{% set sa = form.getlist('serv_ating') if form else [] %}
+      {% for i in range(sd|length) %}{{ linha_serv(sd[i], sl[i], sa[i]) }}{% else %}{{ linha_serv() }}{% endfor %}
+    </div>
+    <button type="button" class="botao sec" data-adicionar="tpl-serv">+ Adicionar serviço</button>
+  </fieldset>
+
+  <fieldset class="cartao" data-grupo="eq"><legend>Equipamentos</legend>
+    <div class="linhas" data-destino>
+      {% set en = form.getlist('eq_nome') if form else [] %}{% set eh = form.getlist('eq_horas') if form else [] %}{% set es = form.getlist('eq_sit') if form else [] %}
+      {% for i in range(en|length) %}{{ linha_eq(en[i], eh[i], es[i]) }}{% endfor %}
+    </div>
+    <button type="button" class="botao sec" data-adicionar="tpl-eq">+ Adicionar equipamento</button>
+  </fieldset>
+
+  <fieldset class="cartao" data-grupo="oc"><legend>Ocorrências e imprevistos</legend>
+    <div class="linhas" data-destino>
+      {% set ot = form.getlist('oc_tipo') if form else [] %}{% set og = form.getlist('oc_grav') if form else [] %}{% set od = form.getlist('oc_desc') if form else [] %}
+      {% for i in range(ot|length) %}{{ linha_oc(ot[i], og[i], od[i]) }}{% endfor %}
+    </div>
+    <button type="button" class="botao sec" data-adicionar="tpl-oc">+ Adicionar ocorrência</button>
+  </fieldset>
+
+  <fieldset class="cartao" data-grupo="foto"><legend>Registro fotográfico</legend>
+    <p class="muted">JPG, PNG ou WebP, até 8 MB cada. O servidor calcula uma impressão digital (SHA-256) de cada foto.</p>
+    <div class="linhas" data-destino>{{ linha_foto() }}</div>
+    <button type="button" class="botao sec" data-adicionar="tpl-foto">+ Adicionar foto</button>
+  </fieldset>
+
+  <fieldset class="cartao"><legend>Observações gerais</legend>
+    <label class="largo"><textarea name="observacoes" rows="4" maxlength="4000">{{ form.get('observacoes','') if form else '' }}</textarea></label>
+  </fieldset>
+
+  <template id="tpl-serv">{{ linha_serv() }}</template>
+  <template id="tpl-eq">{{ linha_eq() }}</template>
+  <template id="tpl-oc">{{ linha_oc() }}</template>
+  <template id="tpl-foto">{{ linha_foto() }}</template>
+
+  <p class="aviso-imutavel">Depois de salvo, o registro <strong>não poderá ser editado nem apagado</strong>. Correções são feitas por retificação, preservando o original.</p>
+  <button class="botao grande" type="submit">Salvar registro</button>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/rdo_form.js') }}"></script>{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, csrf with context %}
+{% block titulo %}Equipe · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'funcionarios') }}
+<h2>Funcionários e equipes</h2>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Nome</th><th>Função</th><th>Equipe</th><th>Situação</th>{% if usuario.perfil in ('admin','gestor') %}<th></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for f in funcionarios %}
+    <tr><td>{{ f.nome }}</td><td>{{ f.funcao }}</td><td>{{ f.equipe or '—' }}</td>
+        <td>{% if f.ativo %}<span class="badge badge-ok">Ativo</span>{% else %}<span class="badge">Inativo</span>{% endif %}</td>
+        {% if usuario.perfil in ('admin','gestor') %}<td>
+          <form method="post" action="{{ url_for('obras.alternar_funcionario', obra_id=obra.id, fid=f.id) }}" class="inline">{{ csrf() }}
+          <button class="link" type="submit">{{ 'Desativar' if f.ativo else 'Reativar' }}</button></form></td>{% endif %}</tr>
+  {% else %}<tr><td colspan="5" class="vazio">Nenhum funcionário cadastrado.</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+{% if usuario.perfil in ('admin','gestor') %}
+<section class="cartao estreito">
+  <h3>Cadastrar funcionário</h3>
+  <form method="post">{{ csrf() }}
+    <label>Nome <input name="nome" required maxlength="150"></label>
+    <label>Função <input name="funcao" required maxlength="100" placeholder="Ex.: Pedreiro"></label>
+    <label>Equipe <input name="equipe" maxlength="100" placeholder="Ex.: Alvenaria"></label>
+    <button class="botao" type="submit">Cadastrar</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

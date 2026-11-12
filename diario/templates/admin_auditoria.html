@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block titulo %}Auditoria{% endblock %}
+{% block conteudo %}
+<h1>Trilha de auditoria</h1><p class="muted">Últimas 300 ações. Esta tabela é somente de inclusão: o banco recusa alterações e exclusões.</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th><th>IP</th></tr></thead><tbody>
+  {% for l in linhas %}<tr><td>{{ l.ts|dt }}</td><td>{{ l.user_nome or '—' }}</td><td>{{ l.acao }}</td><td>{{ l.detalhe or '' }}</td><td>{{ l.ip or '' }}</td></tr>
+  {% else %}<tr><td colspan="5" class="vazio">Sem eventos.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

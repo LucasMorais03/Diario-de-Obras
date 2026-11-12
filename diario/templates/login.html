@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block titulo %}Entrar{% endblock %}
+{% block conteudo %}
+<section class="cartao estreito">
+  <h1>Entrar</h1>
+  <form method="post">
+    {{ csrf() }}
+    <label>E-mail <input type="email" name="email" required autocomplete="username" autofocus></label>
+    <label>Senha <input type="password" name="senha" required autocomplete="current-password"></label>
+    <button class="botao" type="submit">Entrar</button>
+  </form>
+</section>
+{% endblock %}

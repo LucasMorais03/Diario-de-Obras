@@ -1,0 +1,23 @@
+{% macro kpi(rotulo, valor, nota='', alerta=False) %}
+<div class="kpi{% if alerta %} kpi-alerta{% endif %}"><span class="kpi-rotulo">{{ rotulo }}</span><strong class="kpi-valor">{{ valor }}</strong>{% if nota %}<span class="kpi-nota">{{ nota }}</span>{% endif %}</div>
+{% endmacro %}
+
+{% macro obra_nav(obra, ativo) %}
+<div class="obra-cab">
+  <h1>{{ obra.nome }}</h1>
+  <p class="muted">{{ obra.endereco or 'Endereço não informado' }} · {{ R.status_obra[obra.status] }} · início em {{ obra.data_inicio|data }}</p>
+</div>
+<nav class="abas" aria-label="Seções da obra">
+  <a href="{{ url_for('obras.painel', obra_id=obra.id) }}" {% if ativo=='painel' %}aria-current="page"{% endif %}>Painel</a>
+  <a href="{{ url_for('rdos.lista', obra_id=obra.id) }}" {% if ativo=='rdos' %}aria-current="page"{% endif %}>Registros</a>
+  <a href="{{ url_for('obras.ocorrencias', obra_id=obra.id) }}" {% if ativo=='ocorrencias' %}aria-current="page"{% endif %}>Ocorrências</a>
+  <a href="{{ url_for('obras.funcionarios', obra_id=obra.id) }}" {% if ativo=='funcionarios' %}aria-current="page"{% endif %}>Equipe</a>
+  <a href="{{ url_for('obras.relatorio', obra_id=obra.id) }}" {% if ativo=='relatorio' %}aria-current="page"{% endif %}>Relatório</a>
+  {% if usuario.perfil in ('admin','gestor') %}<a href="{{ url_for('obras.integridade', obra_id=obra.id) }}" {% if ativo=='integridade' %}aria-current="page"{% endif %}>Integridade</a>{% endif %}
+</nav>
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro badge_gravidade(g) %}<span class="badge badge-{{ {'baixa':'ok','media':'aviso','alta':'erro'}[g] }}">{{ R.grav[g] }}</span>{% endmacro %}
+{% macro badge_status(s) %}<span class="badge badge-{{ {'aberta':'erro','em_tratamento':'aviso','resolvida':'ok'}[s] }}">{{ R.status_oc[s] }}</span>{% endmacro %}

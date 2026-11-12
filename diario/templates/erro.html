@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block titulo %}Erro {{ codigo }}{% endblock %}
+{% block conteudo %}
+<section class="cartao estreito"><h1>Erro {{ codigo }}</h1><p>{{ mensagem }}</p>
+<p><a class="botao" href="{{ url_for('obras.lista') if usuario else url_for('auth.login') }}">Voltar ao início</a></p></section>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, csrf, badge_gravidade, badge_status with context %}
+{% block titulo %}Ocorrência #{{ oc.id }} · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'ocorrencias') }}
+<article class="cartao">
+  <h2>{{ R.tipo[oc.tipo] }} {{ badge_gravidade(oc.gravidade) }} {{ badge_status(oc.status_atual) }}</h2>
+  <p class="muted">Registrada em {{ oc.criado_em|dt }} por {{ oc.autor_nome }} · <a href="{{ url_for('rdos.detalhe', rdo_id=oc.rdo_id) }}">registro de {{ oc.data_ref|data }}</a></p>
+  <p class="pre">{{ oc.descricao }}</p>
+  <h3>Histórico</h3>
+  {% if updates %}<ul class="timeline">{% for u in updates %}<li><strong>{{ u.autor_nome }}</strong> · {{ u.criado_em|dt }}
+    {% if u.novo_status %}{{ badge_status(u.novo_status) }}{% endif %}<br>{{ u.texto }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Sem atualizações.</p>{% endif %}
+</article>
+<section class="cartao estreito"><h3>Registrar atualização</h3>
+  <form method="post">{{ csrf() }}
+    <label class="largo">Atualização <textarea name="texto" rows="3" required minlength="3" maxlength="2000"></textarea></label>
+    <label>Novo status <select name="novo_status"><option value="">Manter</option>{% for k, v in R.status_oc.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <button class="botao" type="submit">Registrar</button></form></section>
+{% endblock %}
