@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RDO {{ r.data_ref|data }} · {{ obra.nome }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></head>
+<body class="impressao">
+<div class="nao-imprimir barra-impressao"><button class="botao" data-imprimir type="button">Imprimir / salvar em PDF</button></div>
+<h1>Relatório Diário de Obra</h1>
+<p><strong>{{ obra.nome }}</strong><br><span class="muted">{{ obra.endereco or '' }}</span></p>
+{% include '_rdo_corpo.html' %}
+<p class="muted">Integridade: {{ 'conteúdo confere com o hash gravado' if integro else 'ATENÇÃO: conteúdo não confere com o hash gravado' }}.</p>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body></html>

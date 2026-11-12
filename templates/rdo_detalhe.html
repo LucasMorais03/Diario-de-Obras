@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, csrf with context %}
+{% block titulo %}Registro de {{ r.data_ref|data }} · {{ obra.nome }}{% endblock %}
+{% block bodyattrs %}{% if limpar_rascunho %}data-limpar-rascunho="{{ obra.id }}"{% endif %}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'rdos') }}
+<div class="barra"><h2>Registro de {{ r.data_ref|data }} <span class="muted">#{{ r.id }}</span></h2>
+  <span>
+    {% if integro %}<span class="badge badge-ok" title="O conteúdo gravado confere com o hash calculado na criação">Integridade verificada</span>
+    {% else %}<span class="badge badge-erro">Conteúdo não confere com o hash</span>{% endif %}
+    <a class="botao sec" href="{{ url_for('rdos.imprimir', rdo_id=r.id) }}" target="_blank" rel="noopener">Imprimir / PDF</a></span></div>
+{% if not integro %}<div class="alerta alerta-erro" role="alert">O conteúdo deste registro foi alterado depois de gravado. Avise um administrador.</div>{% endif %}
+<article class="cartao">{% include '_rdo_corpo.html' %}</article>
+
+<section class="cartao" aria-labelledby="t-ret">
+  <h3 id="t-ret">Registrar retificação</h3>
+  <p class="muted">O registro original não é alterado. A retificação fica anexada, com autor e horário.</p>
+  <form method="post" action="{{ url_for('rdos.retificar', rdo_id=r.id) }}">{{ csrf() }}
+    <label class="largo">Texto da retificação <textarea name="texto" rows="3" required minlength="5" maxlength="2000"></textarea></label>
+    <button class="botao" type="submit">Registrar retificação</button>
+  </form>
+</section>
+{% endblock %}

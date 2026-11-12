@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, badge_gravidade, badge_status with context %}
+{% block titulo %}Ocorrências · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'ocorrencias') }}
+<form method="get" class="filtros">
+  <label>Status <select name="status"><option value="">Todos</option>{% for k, v in R.status_oc.items() %}<option value="{{ k }}" {% if status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Gravidade <select name="gravidade"><option value="">Todas</option>{% for k, v in R.grav.items() %}<option value="{{ k }}" {% if grav==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <button class="botao sec" type="submit">Filtrar</button></form>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Tipo</th><th>Gravidade</th><th>Descrição</th><th>Status</th></tr></thead><tbody>
+  {% for o in linhas %}<tr><td><a href="{{ url_for('obras.ocorrencia', oid=o.id) }}">{{ o.data_ref|data }}</a></td><td>{{ R.tipo[o.tipo] }}</td>
+    <td>{{ badge_gravidade(o.gravidade) }}</td><td>{{ o.descricao[:120] }}{% if o.descricao|length > 120 %}…{% endif %}</td><td>{{ badge_status(o.status_atual) }}</td></tr>
+  {% else %}<tr><td colspan="5" class="vazio">Nenhuma ocorrência encontrada.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

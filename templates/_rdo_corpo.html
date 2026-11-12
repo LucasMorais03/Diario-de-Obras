@@ -1,0 +1,46 @@
+{# Corpo do RDO, compartilhado entre a tela de detalhe e a versão para impressão #}
+<dl class="meta">
+  <div><dt>Data do registro</dt><dd>{{ r.data_ref|data }}</dd></div>
+  <div><dt>Autor</dt><dd>{{ r.autor_nome }}</dd></div>
+  <div><dt>Registrado em (hora do servidor)</dt><dd>{{ r.criado_em|dt }}
+      {% if atraso > 0 %}<span class="badge badge-aviso">registrado {{ atraso }} dia(s) após a data do registro</span>
+      {% else %}<span class="badge badge-ok">registrado no próprio dia</span>{% endif %}</dd></div>
+  <div><dt>Localização</dt><dd>
+    {% if r.loc_status == 'ok' %}{{ '%.5f'|format(r.lat) }}, {{ '%.5f'|format(r.lon) }}
+      {% if r.precisao_m %}<span class="muted">(± {{ r.precisao_m|dec(0) }} m)</span>{% endif %}
+      <a class="nao-imprimir" target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat={{ r.lat }}&amp;mlon={{ r.lon }}#map=18/{{ r.lat }}/{{ r.lon }}">ver no mapa</a>
+    {% else %}<span class="badge badge-aviso">{{ R.loc[r.loc_status] }}</span>{% endif %}</dd></div>
+  <div><dt>Clima</dt><dd>Manhã: {{ R.clima[r.clima_manha] }} · Tarde: {{ R.clima[r.clima_tarde] }}</dd></div>
+  <div><dt>Condição de trabalho</dt><dd>{{ R.condicao[r.condicao] }} · {{ r.horas_improdutivas|dec(1) }} h improdutivas</dd></div>
+  <div><dt>Efetivo</dt><dd>{{ presentes|length + r.efetivo_extra }} ({{ presentes|length }} cadastrados + {{ r.efetivo_extra }} adicionais)</dd></div>
+  {% if r.tempo_preenchimento_s is not none %}<div><dt>Tempo de preenchimento</dt><dd>{{ (r.tempo_preenchimento_s // 60) }} min {{ r.tempo_preenchimento_s % 60 }} s</dd></div>{% endif %}
+</dl>
+
+<h3>Serviços executados</h3>
+{% if servicos %}<table><thead><tr><th>Serviço</th><th>Local</th><th>Meta do dia atingida</th></tr></thead><tbody>
+  {% for s in servicos %}<tr><td>{{ s.descricao }}</td><td>{{ s.local or '—' }}</td><td>{{ s.atingimento }}%</td></tr>{% endfor %}</tbody></table>
+{% else %}<p class="muted">Nenhum serviço informado.</p>{% endif %}
+
+{% if presentes %}<h3>Funcionários presentes</h3>
+<p>{% for f in presentes %}{{ f.nome }} <span class="muted">({{ f.funcao }})</span>{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+
+{% if equipamentos %}<h3>Equipamentos</h3>
+<table><thead><tr><th>Equipamento</th><th>Horas</th><th>Situação</th></tr></thead><tbody>
+  {% for e in equipamentos %}<tr><td>{{ e.nome }}</td><td>{{ e.horas|dec(1) }}</td><td>{{ R.equip[e.situacao] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+
+<h3>Ocorrências</h3>
+{% if ocorrencias %}<table><thead><tr><th>Tipo</th><th>Gravidade</th><th>Descrição</th><th>Status atual</th></tr></thead><tbody>
+  {% for o in ocorrencias %}<tr><td>{{ R.tipo[o.tipo] }}</td><td>{{ R.grav[o.gravidade] }}</td><td>{{ o.descricao }}</td>
+    <td>{{ R.status_oc[o.status_atual] }}</td></tr>{% endfor %}</tbody></table>
+{% else %}<p class="muted">Nenhuma ocorrência registrada.</p>{% endif %}
+
+{% if r.observacoes %}<h3>Observações</h3><p class="pre">{{ r.observacoes }}</p>{% endif %}
+
+{% if fotos %}<h3>Fotos</h3><div class="galeria">
+  {% for f in fotos %}<figure><img src="{{ url_for('rdos.foto', foto_id=f.id) }}" alt="{{ f.legenda or 'Foto do registro' }}" loading="lazy">
+    <figcaption>{{ f.legenda or f.nome_original }}<br><span class="muted hash">SHA-256 {{ f.sha256[:16] }}…</span></figcaption></figure>{% endfor %}</div>{% endif %}
+
+{% if retificacoes %}<h3 id="retificacoes">Retificações</h3>
+<ul class="timeline">{% for t in retificacoes %}<li><strong>{{ t.autor_nome }}</strong> · {{ t.criado_em|dt }}<br>{{ t.texto }}</li>{% endfor %}</ul>{% endif %}
+
+<p class="muted hash">Hash do registro: {{ r.hash }}<br>Hash do registro anterior: {{ r.hash_anterior or '— (primeiro registro da obra)' }}</p>

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav with context %}
+{% block titulo %}Integridade · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'integridade') }}
+<h2>Verificação de integridade</h2>
+<p>Cada registro guarda um hash (SHA-256) do seu conteúdo e do hash do registro anterior. Esta tela recalcula todos os hashes a partir do que está gravado e confere também os arquivos de foto.</p>
+{% if res.ok %}<div class="alerta alerta-ok" role="status"><strong>Tudo confere.</strong> {{ res.total }} registro(s) verificado(s); nenhuma alteração detectada.</div>
+{% else %}<div class="alerta alerta-erro" role="alert"><strong>Inconsistências encontradas ({{ res.problemas|length }}).</strong></div>
+<table><thead><tr><th>Registro</th><th>Problema</th></tr></thead><tbody>
+  {% for rid, msg in res.problemas %}<tr><td><a href="{{ url_for('rdos.detalhe', rdo_id=rid) }}">#{{ rid }}</a></td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+<p class="muted">Limite: o hash detecta alterações no banco ou nas fotos, mas não impede que alguém com acesso ao servidor refaça toda a cadeia. Para esse cenário, guarde cópias externas do último hash (por exemplo, no relatório impresso).</p>
+{% endblock %}

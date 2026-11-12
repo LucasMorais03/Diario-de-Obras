@@ -1,0 +1,35 @@
+{% from '_macros.html' import csrf with context %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Diário de Obras{% endblock %} · Diário de Obras Digital</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body {% block bodyattrs %}{% endblock %}>
+<a class="pular" href="#conteudo">Ir para o conteúdo</a>
+<header class="topo">
+  <a class="marca" href="{{ url_for('obras.lista') if usuario else url_for('auth.login') }}">Diário de Obras</a>
+  {% if usuario %}
+  <nav class="topo-nav" aria-label="Principal">
+    <a href="{{ url_for('obras.lista') }}">Obras</a>
+    {% if usuario.perfil == 'admin' %}
+      <a href="{{ url_for('admin.usuarios') }}">Usuários</a>
+      <a href="{{ url_for('admin.auditoria') }}">Auditoria</a>
+    {% endif %}
+    <a href="{{ url_for('auth.trocar_senha') }}">{{ usuario.nome.split(' ')[0] }} ({{ R.perfil[usuario.perfil] }})</a>
+    <form method="post" action="{{ url_for('auth.logout') }}" class="inline">{{ csrf() }}<button class="link" type="submit">Sair</button></form>
+  </nav>
+  {% endif %}
+</header>
+<main id="conteudo" class="conteudo">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="alerta alerta-{{ cat }}" role="{{ 'alert' if cat=='erro' else 'status' }}">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

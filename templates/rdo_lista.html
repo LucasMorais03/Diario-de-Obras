@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav with context %}
+{% block titulo %}Registros · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'rdos') }}
+<form method="get" class="filtros">
+  <label>Busca <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="serviço, local, ocorrência, observação"></label>
+  <label>De <input type="date" name="inicio" value="{{ request.args.get('inicio','') }}"></label>
+  <label>Até <input type="date" name="fim" value="{{ request.args.get('fim','') }}"></label>
+  <label>Autor <select name="autor"><option value="">Todos</option>
+    {% for a in autores %}<option value="{{ a.autor_id }}" {% if request.args.get('autor')==a.autor_id|string %}selected{% endif %}>{{ a.autor_nome }}</option>{% endfor %}</select></label>
+  <label class="check"><input type="checkbox" name="so_ocorr" value="1" {% if request.args.get('so_ocorr') %}checked{% endif %}> Com ocorrência</label>
+  <label class="check"><input type="checkbox" name="sem_loc" value="1" {% if request.args.get('sem_loc') %}checked{% endif %}> Sem localização</label>
+  <button class="botao sec" type="submit">Filtrar</button>
+  <a class="botao" href="{{ url_for('rdos.novo', obra_id=obra.id) }}">Novo registro</a>
+</form>
+<p class="muted">{{ total }} registro(s) encontrado(s).</p>
+<div class="tabela-rolagem"><table>
+  <thead><tr><th>Data</th><th>Autor</th><th>Clima</th><th>Efetivo</th><th>Atingimento</th><th>Ocorr.</th><th>Fotos</th><th>Local</th><th>Completo</th></tr></thead>
+  <tbody>
+  {% for r in linhas %}
+    <tr>
+      <td><a href="{{ url_for('rdos.detalhe', rdo_id=r.id) }}">{{ r.data_ref|data }}</a>
+          {% if r|atraso > 0 %}<span class="badge badge-aviso" title="Registrado {{ r|atraso }} dia(s) depois">+{{ r|atraso }}d</span>{% endif %}</td>
+      <td>{{ r.autor_nome }}</td>
+      <td>{{ R.clima[r.clima_manha] }} / {{ R.clima[r.clima_tarde] }}</td>
+      <td>{{ r.efetivo }}</td>
+      <td>{{ (r.ating|dec(0) ~ '%') if r.ating is not none else '—' }}</td>
+      <td>{{ r.n_ocorr }}</td><td>{{ r.n_fotos }}</td>
+      <td>{% if r.loc_status=='ok' %}<span class="badge badge-ok">Sim</span>{% else %}<span class="badge badge-aviso">Não</span>{% endif %}</td>
+      <td>{{ r.compl }}%</td>
+    </tr>
+  {% else %}<tr><td colspan="9" class="vazio">Nenhum registro encontrado com estes filtros.</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+{% if paginas > 1 %}
+<nav class="paginacao" aria-label="Páginas">
+  {% if pagina > 1 %}<a href="{{ url_for('rdos.lista', obra_id=obra.id, p=pagina-1, **args) }}">‹ Anterior</a>{% endif %}
+  <span>Página {{ pagina }} de {{ paginas }}</span>
+  {% if pagina < paginas %}<a href="{{ url_for('rdos.lista', obra_id=obra.id, p=pagina+1, **args) }}">Próxima ›</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

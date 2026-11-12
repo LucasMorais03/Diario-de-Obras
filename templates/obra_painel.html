@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import obra_nav, kpi, badge_gravidade with context %}
+{% block titulo %}Painel · {{ obra.nome }}{% endblock %}
+{% block conteudo %}
+{{ obra_nav(obra, 'painel') }}
+<form method="get" class="filtros">
+  <label>De <input type="date" name="inicio" value="{{ ini }}"></label>
+  <label>Até <input type="date" name="fim" value="{{ fim }}"></label>
+  <button class="botao sec" type="submit">Aplicar período</button>
+  <span class="atalhos">Atalhos:
+    <a href="{{ url_for('obras.painel', obra_id=obra.id, dias=7) }}">7 dias</a>
+    <a href="{{ url_for('obras.painel', obra_id=obra.id, dias=30) }}">30 dias</a>
+    <a href="{{ url_for('obras.painel', obra_id=obra.id, dias=90) }}">90 dias</a></span>
+  <a class="botao" href="{{ url_for('rdos.novo', obra_id=obra.id) }}">Novo registro</a>
+</form>
+
+<section class="kpis" aria-label="Indicadores do período">
+  {{ kpi('Registros no período', r.n_rdos) }}
+  {{ kpi('Atingimento médio da meta', (r.ating_medio|dec(0) ~ '%') if r.ating_medio is not none else '—', 'meta: ' ~ meta ~ '%', r.ating_medio is not none and r.ating_medio < meta) }}
+  {{ kpi('Horas improdutivas (clima)', r.horas_total|dec(1) ~ ' h', 'alerta a partir de ' ~ limite_horas|int ~ ' h/dia') }}
+  {{ kpi('Efetivo médio por dia', r.efetivo_medio|dec(1)) }}
+  {{ kpi('Registros com localização', (r.pct_loc|dec(0) ~ '%') if r.pct_loc is not none else '—') }}
+  {{ kpi('Registros completos', (r.pct_completos|dec(0) ~ '%') if r.pct_completos is not none else '—', 'serviços, efetivo, local e foto') }}
+  {{ kpi('Dias úteis sem registro', r.sem_registro|length, '', r.sem_registro|length > 0) }}
+  {{ kpi('Ocorrências abertas', r.abertas|length, '', r.abertas|length > 0) }}
+</section>
+
+<section class="cartao">
+  <h2>Alertas de desvio</h2>
+  {% if r.alertas %}
+  <ul class="lista-alertas">
+    {% for data, rid, tipo, texto in r.alertas[:12] %}
+    <li><span class="badge badge-aviso">{{ tipo }}</span> <a href="{{ url_for('rdos.detalhe', rdo_id=rid) }}">{{ data|data }}</a> · {{ texto }}</li>
+    {% endfor %}
+  </ul>
+  {% if r.alertas|length > 12 %}<p class="muted">Exibindo 12 de {{ r.alertas|length }} alertas.</p>{% endif %}
+  {% else %}<p class="muted">Nenhum desvio de produtividade, interferência climática relevante ou ocorrência grave em aberto no período.</p>{% endif %}
+</section>
+
+<div class="grade-2">
+  <section class="cartao"><h2>Atingimento da meta diária</h2>{{ grafs.ating }}
+    <p class="muted">Média dos serviços informados em cada registro. Pontos abaixo da meta aparecem em destaque.</p></section>
+  <section class="cartao"><h2>Horas improdutivas por clima</h2>{{ grafs.clima }}
+    <p class="muted">Barras destacadas atingem o limite de alerta.</p></section>
+  <section class="cartao"><h2>Efetivo por dia</h2>{{ grafs.efetivo }}
+    <p class="muted">Funcionários presentes marcados mais efetivo adicional.</p></section>
+  <section class="cartao"><h2>Ocorrências</h2>
+    <p>Abertas por gravidade:
+      {% for k in ('alta','media','baixa') %}{{ badge_gravidade(k) }} {{ r.por_grav[k] }}&nbsp;&nbsp;{% endfor %}</p>
+    {% if r.por_tipo %}<table><thead><tr><th>Tipo</th><th>Qtde</th></tr></thead><tbody>
+      {% for t, n in r.por_tipo.items() %}<tr><td>{{ R.tipo[t] }}</td><td>{{ n }}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="muted">Sem ocorrências no período.</p>{% endif %}
+    <p><a href="{{ url_for('obras.ocorrencias', obra_id=obra.id) }}">Ver todas as ocorrências</a></p>
+  </section>
+</div>
+
+{% if r.sem_registro %}
+<section class="cartao"><h2>Dias úteis sem registro</h2>
+  <p>{% for d in r.sem_registro[:30] %}<span class="badge badge-aviso">{{ d|data }}</span> {% endfor %}
+  {% if r.sem_registro|length > 30 %}… e mais {{ r.sem_registro|length - 30 }}{% endif %}</p></section>
+{% endif %}
+
+<p class="acoes">
+  <a class="botao sec" href="{{ url_for('obras.relatorio', obra_id=obra.id, inicio=ini, fim=fim) }}">Relatório do período</a>
+  <a class="botao sec" href="{{ url_for('obras.exportar', obra_id=obra.id, inicio=ini, fim=fim) }}">Exportar CSV</a>
+</p>
+{% endblock %}

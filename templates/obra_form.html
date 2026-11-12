@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block titulo %}Nova obra{% endblock %}
+{% block conteudo %}
+<section class="cartao estreito">
+  <h1>Nova obra</h1>
+  <form method="post">
+    {{ csrf() }}
+    <label>Nome da obra <input name="nome" required maxlength="200" value="{{ request.form.get('nome','') }}"></label>
+    <label>Endereço <input name="endereco" maxlength="300" value="{{ request.form.get('endereco','') }}"></label>
+    <label>Responsável técnico <input name="responsavel" maxlength="150" value="{{ request.form.get('responsavel','') }}"></label>
+    <label>Data de início <input type="date" name="data_inicio" required value="{{ request.form.get('data_inicio', hoje) }}"></label>
+    <label>Data prevista de término <input type="date" name="data_prevista_fim" value="{{ request.form.get('data_prevista_fim','') }}"></label>
+    <button class="botao" type="submit">Cadastrar obra</button>
+  </form>
+</section>
+{% endblock %}

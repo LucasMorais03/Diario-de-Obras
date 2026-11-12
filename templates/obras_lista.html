@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block titulo %}Obras{% endblock %}
+{% block conteudo %}
+<div class="barra"><h1>Obras</h1>
+  {% if usuario.perfil in ('admin','gestor') %}<a class="botao" href="{{ url_for('obras.nova') }}">Nova obra</a>{% endif %}</div>
+{% if not obras %}
+  <p class="vazio">Você ainda não está vinculado a nenhuma obra. Peça a um administrador para vinculá-lo.</p>
+{% else %}
+<div class="grade">
+  {% for o in obras %}
+  <article class="cartao">
+    <h2><a href="{{ url_for('obras.painel', obra_id=o.id) }}">{{ o.nome }}</a></h2>
+    <p class="muted">{{ o.endereco or 'Endereço não informado' }}</p>
+    <p><span class="badge">{{ R.status_obra[o.status] }}</span>
+       {% if abertas.get(o.id) %}<span class="badge badge-erro">{{ abertas[o.id] }} ocorrência(s) aberta(s)</span>{% endif %}</p>
+    <p class="muted">Último registro: {{ ultimo[o.id]|data if ultimo.get(o.id) else 'nenhum' }}</p>
+    <p class="acoes"><a class="botao" href="{{ url_for('rdos.novo', obra_id=o.id) }}">Novo registro</a>
+       <a class="botao sec" href="{{ url_for('rdos.lista', obra_id=o.id) }}">Registros</a></p>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

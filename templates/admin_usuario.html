@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block titulo %}{{ 'Editar' if alvo else 'Novo' }} usuário{% endblock %}
+{% block conteudo %}
+<section class="cartao estreito">
+  <h1>{{ 'Editar usuário' if alvo else 'Novo usuário' }}</h1>
+  <form method="post">{{ csrf() }}
+    <label>Nome <input name="nome" required maxlength="150" value="{{ request.form.get('nome', alvo.nome if alvo else '') }}"></label>
+    <label>E-mail <input type="email" name="email" required value="{{ request.form.get('email', alvo.email if alvo else '') }}"></label>
+    <label>Perfil <select name="perfil">{% for k, v in R.perfil.items() %}<option value="{{ k }}" {% if request.form.get('perfil', alvo.perfil if alvo else 'campo')==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ 'Nova senha (deixe em branco para manter)' if alvo else 'Senha inicial' }} <input type="password" name="senha" autocomplete="new-password" {% if not alvo %}required{% endif %}></label>
+    {% if alvo %}<label class="check"><input type="checkbox" name="ativo" value="1" {% if alvo.ativo %}checked{% endif %}> Usuário ativo</label>{% endif %}
+    <fieldset><legend>Obras com acesso</legend>
+      {% for o in obras %}<label class="check"><input type="checkbox" name="obras" value="{{ o.id }}" {% if o.id in vinculadas %}checked{% endif %}> {{ o.nome }}</label>
+      {% else %}<p class="muted">Nenhuma obra cadastrada.</p>{% endfor %}
+    </fieldset>
+    <button class="botao" type="submit">Salvar</button>
+  </form>
+</section>
+{% endblock %}
