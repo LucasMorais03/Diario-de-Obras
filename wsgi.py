@@ -14,25 +14,27 @@ def _bootstrap_admin() -> None:
     email = os.environ.get("BOOTSTRAP_ADMIN_EMAIL", "").strip().lower()
     senha = os.environ.get("BOOTSTRAP_ADMIN_SENHA", "")
 
+    print(f"[BOOTSTRAP] nome={bool(nome)} email={email!r} senha={bool(senha)}", flush=True)
+
     if not (nome and email and senha):
-        app.logger.info("Bootstrap de admin não executado: variáveis ausentes.")
         return
 
     erro_senha = senha_invalida(senha)
     if erro_senha:
-        app.logger.warning("Bootstrap de admin ignorado: %s", erro_senha)
+        print(f"[BOOTSTRAP] Ignorado: {erro_senha}", flush=True)
         return
 
     db_path = Path(app.config["DATABASE"])
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"[BOOTSTRAP] Banco em: {db_path.resolve()}", flush=True)
 
     db = conectar(str(db_path))
     try:
         init_db(db)
         with transacao(db):
-            existe = db.execute("SELECT 1 FROM users LIMIT 1").fetchone()
+            existe = db.execute("SELECT id, email FROM users LIMIT 1").fetchone()
             if existe:
-                app.logger.info("Bootstrap de admin ignorado: já existe usuário cadastrado.")
+                print(f"[BOOTSTRAP] Usuário já existe: {dict(existe)}", flush=True)
                 return
             db.execute(
                 "INSERT INTO users (nome, email, senha_hash, perfil, ativo, criado_em) "
@@ -44,9 +46,9 @@ def _bootstrap_admin() -> None:
                 "VALUES (?, NULL, ?, 'bootstrap_admin_criado', ?, NULL)",
                 (agora_utc(), nome[:150], f"email={email[:150]}"),
             )
-        app.logger.info("Administrador inicial criado via bootstrap (%s).", email)
-    except Exception:
-        app.logger.exception("Falha durante o bootstrap do administrador inicial.")
+        print(f"[BOOTSTRAP] Admin criado com sucesso: {email}", flush=True)
+    except Exception as exc:
+        print(f"[BOOTSTRAP] ERRO: {exc!r}", flush=True)
         raise
     finally:
         db.close()
