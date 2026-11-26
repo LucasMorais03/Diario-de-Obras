@@ -1,5 +1,6 @@
 """Ponto de entrada para servidores WSGI (gunicorn, waitress)."""
 import os
+from pathlib import Path
 
 from diario import create_app
 from diario.db import agora_utc, conectar, init_db, transacao
@@ -14,6 +15,7 @@ def _bootstrap_admin() -> None:
     senha = os.environ.get("BOOTSTRAP_ADMIN_SENHA", "")
 
     if not (nome and email and senha):
+        app.logger.info("Bootstrap de admin não executado: variáveis ausentes.")
         return
 
     erro_senha = senha_invalida(senha)
@@ -21,12 +23,16 @@ def _bootstrap_admin() -> None:
         app.logger.warning("Bootstrap de admin ignorado: %s", erro_senha)
         return
 
-    db = conectar(app.config["DATABASE"])
+    db_path = Path(app.config["DATABASE"])
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    db = conectar(str(db_path))
     try:
         init_db(db)
         with transacao(db):
             existe = db.execute("SELECT 1 FROM users LIMIT 1").fetchone()
             if existe:
+                app.logger.info("Bootstrap de admin ignorado: já existe usuário cadastrado.")
                 return
             db.execute(
                 "INSERT INTO users (nome, email, senha_hash, perfil, ativo, criado_em) "
@@ -39,6 +45,9 @@ def _bootstrap_admin() -> None:
                 (agora_utc(), nome[:150], f"email={email[:150]}"),
             )
         app.logger.info("Administrador inicial criado via bootstrap (%s).", email)
+    except Exception:
+        app.logger.exception("Falha durante o bootstrap do administrador inicial.")
+        raise
     finally:
         db.close()
 
